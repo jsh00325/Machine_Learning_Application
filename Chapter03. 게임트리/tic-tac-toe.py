@@ -1,19 +1,19 @@
 line_index = [[0,1,2],[3,4,5],[6,7,8],[0,3,6],[1,4,7],[2,5,8],[0,4,8],[2,4,6]]
 POS_INF, NEG_INF = 99999, -99999
 
-class Board :
+class TicTacToe :
 	def __init__(self) : 
 		self.board = ['.'] * 9
 		self.empty = 9
 		
 	def __str__(self) :
-		return '\n'.join(['|{}|'.format('|'.join([self.board[3*i + x] for x in range(3)])) for i in range(3)]) + '\n'
+		return '\n'.join([f'|{"|".join([self.board[3*i + x] for x in range(3)])}|' for i in range(3)]) + '\n'
 	
 	def getChild(self) :
 		return [p for p in range(9) if self.board[p] == '.']
 	
 	def move(self, pos, player) :
-		if (pos in range(9)) and (self.board[pos] == '.') :
+		if pos in self.getChild() :
 			self.board[pos] = player
 			self.empty -= 1
 
@@ -33,50 +33,46 @@ class Board :
 		
 	def gameover(self) :
 		return self.check_win('X') or self.check_win('O') or self.empty == 0
-
-def minimax(cur, maxPlayer) :
-	idx = -1
-
-	if cur.gameover() :
-		return -1, cur.evaluate()
 	
-	if maxPlayer :
-		value = NEG_INF
+	def minimax(self, depth, maxPlayer) :
+		idx = -1
 
-		for p in cur.getChild() :
-			cur.board[p] = 'X'
-			cur.empty -= 1
-			_, score = minimax(cur, False)
-			cur.board[p] = '.'
-			cur.empty += 1
-
-			if score > value :
-				idx, value = p, score
-	else :
-		value = POS_INF
+		if depth == 0 or self.gameover() :
+			return -1, self.evaluate()
 		
-		for p in cur.getChild() :
-			if cur.board[p] != '.' :
-				continue
+		if maxPlayer :
+			value = NEG_INF
 
-			cur.board[p] = 'O'
-			cur.empty -= 1
-			_, score = minimax(cur, True)
-			cur.board[p] = '.'
-			cur.empty += 1
+			for child in self.getChild() :
+				self.move(child, 'X')
+				_, score = self.minimax(depth - 1, False)
+				self.board[child] = '.'
+				self.empty += 1
+				
+				if score > value :
+					idx, value = child, score
+		else :
+			value = POS_INF
 
-			if score < value :
-				idx, value = p, score
-	return idx, value
+			for child in self.getChild() :
+				self.move(child, 'O')
+				_, score = self.minimax(depth - 1, True)
+				self.board[child] = '.'
+				self.empty += 1
 
-board, player = Board(), 'X'
+				if score < value :
+					idx, value = child, score
+
+		return idx, value
+
+board, player = TicTacToe(), 'X'
 while True :
 	print(board)
 
 	if board.gameover() :
 		break
 
-	i, v = minimax(board, player == 'X')
+	i, v = board.minimax(9, player == 'X')
 	board.move(i, player)
 
 	player = ('X' if player == 'O' else 'O')
